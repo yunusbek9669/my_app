@@ -5,15 +5,12 @@ class ApiClient {
 
   ApiClient._(this.dio);
 
-  static Future<ApiClient> create(String baseUrl) async {
+  static Future<ApiClient> create(String baseUrl, {required String token}) async {
     final dio = Dio(BaseOptions(
       baseUrl: baseUrl,
       connectTimeout: const Duration(seconds: 5),
       receiveTimeout: const Duration(seconds: 5),
     ));
-
-    // 🔹 bu yerga haqiqiy tokeningizni yozasiz
-    const token = "changeme_REPLACE_WITH_STRONG_KEY";
 
     dio.options.headers["Authorization"] = "Bearer $token";
 

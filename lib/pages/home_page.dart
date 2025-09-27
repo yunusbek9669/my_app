@@ -4,6 +4,7 @@ import '../main_layout.dart';
 import '../models/nature.dart';
 import '../services/api_client.dart';
 import '../services/api_service.dart';
+import '../services/auth_service.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -23,11 +24,20 @@ class _HomePageState extends State<HomePage> {
     initApi();
   }
 
+  // 🔹 initApi() ni token bilan ishlashga moslab o'zgartirdik
   Future<void> initApi() async {
-    final client = await ApiClient.create("http://iiv-guvohnoma/api");
+    final accessToken = await AuthService().getAccessToken(); // login tokenini o‘qi
+    if (accessToken == null) return;
+
+    final client = await ApiClient.create(
+      "http://iiv-guvohnoma/api",
+      token: accessToken, // tokenni uzatish
+    );
+
     setState(() {
-      api = ApiService(client.dio);
+      api = ApiService(client.dio, context);
     });
+
     await loadData();
   }
 
@@ -43,6 +53,9 @@ class _HomePageState extends State<HomePage> {
       setState(() {
         loading = false;
       });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString())), // foydalanuvchiga xabar
+      );
       print("Xatolik: $e");
     }
   }

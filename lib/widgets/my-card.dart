@@ -1,20 +1,22 @@
 import 'package:flutter/material.dart';
 import '../models/nature.dart';
+import '../utils.dart';
 import 'info-card.dart';
 
 class MyCard extends StatelessWidget {
-  final Nature nature; // 🔑 data kiritiladi
+  final Nature nature;
 
   const MyCard({super.key, required this.nature});
 
   @override
   Widget build(BuildContext context) {
+    final imageBytes = base64FromDataUri(nature.imageUrl);
+
     return Card(
       elevation: 3,
       margin: const EdgeInsets.fromLTRB(6, 3, 6, 3),
       child: Stack(
         children: [
-          // asosiy kontent
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -38,8 +40,8 @@ class MyCard extends StatelessWidget {
                                 Center(
                                   child: Hero(
                                     tag: nature.imageUrl,
-                                    child: Image.asset(
-                                      nature.imageUrl,
+                                    child: Image.memory(
+                                      imageBytes,
                                       fit: BoxFit.contain,
                                     ),
                                   ),
@@ -62,23 +64,25 @@ class MyCard extends StatelessWidget {
                   },
                   child: Hero(
                     tag: nature.imageUrl,
-                    child: Image.asset(
-                      nature.imageUrl,
+                    child: Image.memory(
+                      imageBytes,
                       height: 80,
+                      fit: BoxFit.cover,
                     ),
                   ),
                 ),
               ),
-              Expanded( // 👉 shu joyda qo‘shiladi
+              Expanded(
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start, // chapga tekislash
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Padding(
                       padding: const EdgeInsets.fromLTRB(5, 5, 30, 0),
                       child: Text(
                         nature.title,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                        style: const TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 16),
                       ),
                     ),
                     Padding(
@@ -98,8 +102,9 @@ class MyCard extends StatelessWidget {
                         nature.description,
                         softWrap: true,
                         maxLines: 2,
-                        overflow: TextOverflow.ellipsis, // ✅ sig‘masa ... qo‘yadi
-                        style: const TextStyle(fontSize: 12, color: Colors.green),
+                        overflow: TextOverflow.ellipsis,
+                        style:
+                        const TextStyle(fontSize: 12, color: Colors.green),
                       ),
                     )
                   ],
@@ -107,7 +112,6 @@ class MyCard extends StatelessWidget {
               ),
             ],
           ),
-
           InfoButton(nature: nature)
         ],
       ),
