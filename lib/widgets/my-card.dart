@@ -15,6 +15,7 @@ class MyCard extends StatelessWidget {
     return Card(
       elevation: 3,
       margin: const EdgeInsets.fromLTRB(6, 3, 6, 3),
+      color: Colors.white,
       child: Stack(
         children: [
           Row(
@@ -39,7 +40,7 @@ class MyCard extends StatelessWidget {
                               children: [
                                 Center(
                                   child: Hero(
-                                    tag: nature.imageUrl,
+                                    tag: "nature-${nature.id}",
                                     child: Image.memory(
                                       imageBytes,
                                       fit: BoxFit.contain,
@@ -63,7 +64,7 @@ class MyCard extends StatelessWidget {
                     );
                   },
                   child: Hero(
-                    tag: nature.imageUrl,
+                    tag: "nature-${nature.id}",
                     child: Image.memory(
                       imageBytes,
                       height: 80,

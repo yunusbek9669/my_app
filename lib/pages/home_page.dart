@@ -30,7 +30,7 @@ class _HomePageState extends State<HomePage> {
     if (accessToken == null) return;
 
     final client = await ApiClient.create(
-      "http://192.168.1.32/api",
+      "http://localhost:8080/api",
       token: accessToken, // tokenni uzatish
     );
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/nature.dart';
+import '../utils.dart';
 
 class InfoButton extends StatelessWidget {
   final Nature nature;
@@ -8,6 +9,7 @@ class InfoButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final imageBytes = base64FromDataUri(nature.imageUrl);
     return Positioned(
       top: 0,
       right: 0,
@@ -60,9 +62,9 @@ class InfoButton extends StatelessWidget {
                         children: [
                           ClipRRect(
                             borderRadius: BorderRadius.circular(12),
-                            child: Image.asset(
-                              nature.imageUrl,
-                              fit: BoxFit.cover,
+                            child: Image.memory(
+                              imageBytes,
+                              fit: BoxFit.contain,
                               width: double.infinity,
                               height: 200,
                             ),
