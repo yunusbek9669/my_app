@@ -1,26 +1,96 @@
 class UserInfo {
-  final String username;
-  final String imageUrl;
+  final String? id;
+  final String pinfl;
   final String fullName;
-  final String department;
-  final String position;
-  final String title;
-  final String phone;
+  final String? middleName;
+  final String? birthDate;
+  final String? gender;
+  final String? phone;
+  final String? email;
+  final String? address;
+  final String? imageUrl;
 
-  final Map<String, dynamic>? token;
+  UserInfo({
+    this.id,
+    required this.pinfl,
+    required this.fullName,
+    this.middleName,
+    this.birthDate,
+    this.gender,
+    this.phone,
+    this.email,
+    this.address,
+    this.imageUrl,
+  });
 
-  UserInfo(this.username, this.imageUrl, this.fullName, this.department, this.position, this.title, this.phone, this.token);
-
+  // JSON'dan object yaratish
   factory UserInfo.fromJson(Map<String, dynamic> json) {
     return UserInfo(
-      json['username'],
-      json['imageUrl'],
-      json['fullName'],
-      json['department'],
-      json['position'],
-      json['title'],
-      json['phone'],
-      json['token'] as Map<String, dynamic>?,
+      id: json['id']?.toString(),
+      pinfl: json['pinfl']?.toString() ?? '',
+      fullName: json['first_name']?.toString() ??
+          json['fullName']?.toString() ??
+          'Noma\'lum',
+      middleName: json['middle_name']?.toString() ??
+          json['middleName']?.toString(),
+      birthDate: json['birth_date']?.toString() ??
+          json['birthDate']?.toString(),
+      gender: json['gender']?.toString(),
+      phone: json['phone']?.toString() ??
+          json['phone_number']?.toString(),
+      email: json['email']?.toString(),
+      address: json['address']?.toString(),
+      imageUrl: json['photo_url']?.toString() ??
+          json['imageUrl']?.toString() ??
+          json['photo']?.toString(),
     );
+  }
+
+  // Object'ni JSON'ga aylantirish
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'pinfl': pinfl,
+      'first_name': fullName,
+      'middle_name': middleName,
+      'birth_date': birthDate,
+      'gender': gender,
+      'phone': phone,
+      'email': email,
+      'address': address,
+      'photo_url': imageUrl,
+    };
+  }
+
+  // Copy with
+  UserInfo copyWith({
+    String? id,
+    String? pinfl,
+    String? fullName,
+    String? middleName,
+    String? birthDate,
+    String? gender,
+    String? phone,
+    String? email,
+    String? address,
+    String? imageUrl,
+  }) {
+    return UserInfo(
+      id: id ?? this.id,
+      pinfl: pinfl ?? this.pinfl,
+      fullName: fullName ?? this.fullName,
+      middleName: middleName ?? this.middleName,
+      birthDate: birthDate ?? this.birthDate,
+      gender: gender ?? this.gender,
+      phone: phone ?? this.phone,
+      email: email ?? this.email,
+      address: address ?? this.address,
+      imageUrl: imageUrl ?? this.imageUrl,
+    );
+  }
+
+  @override
+  String toString() {
+    return 'UserInfo(pinfl: $pinfl, fullName: $fullName, phone: $phone, email: $email)';
   }
 }

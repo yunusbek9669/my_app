@@ -79,6 +79,8 @@ class ApiService {
         throw Exception("Token topilmadi!");
       }
 
+      debugPrint('Fetching user with PINFL: $pinfl');
+
       final response = await dio.post(
         "/user/user",
         data: {"pinfl": pinfl},
@@ -111,6 +113,7 @@ class ApiService {
     }
   }
 
+  // Xatoliklarni UI da ko'rsatish uchun helper metod
   static void handleError(BuildContext context, dynamic error) {
     String message = 'Xatolik yuz berdi';
     Color backgroundColor = Colors.red;
@@ -167,6 +170,7 @@ class ApiService {
   }
 }
 
+// Custom exception klasslari
 class ApiWarningException implements Exception {
   final String message;
   final String? code;
@@ -186,3 +190,57 @@ class ApiErrorException implements Exception {
   @override
   String toString() => message;
 }
+
+// Foydalanish misoli:
+/*
+class MyWidget extends StatefulWidget {
+  @override
+  _MyWidgetState createState() => _MyWidgetState();
+}
+
+class _MyWidgetState extends State<MyWidget> {
+  final ApiService apiService = ApiService(Dio(BaseOptions(baseUrl: "https://api.example.com")));
+  List<Nature> certificates = [];
+  bool isLoading = false;
+
+  Future<void> loadCertificates() async {
+    setState(() => isLoading = true);
+
+    try {
+      certificates = await apiService.fetchCertificates();
+      setState(() {});
+    } on ApiWarningException catch (e) {
+      // Warning - ma'lumot yo'q, lekin davom etish mumkin
+      if (mounted) {
+        ApiService.handleError(context, e); // Sariq rangli ogohlantirish
+      }
+      setState(() => certificates = []); // Bo'sh ro'yxat
+    } on ApiErrorException catch (e) {
+      // Critical error - qizil rangli xabar
+      if (mounted) {
+        ApiService.handleError(context, e);
+      }
+    } catch (e) {
+      // Boshqa xatoliklar
+      if (mounted) {
+        ApiService.handleError(context, e);
+      }
+    } finally {
+      if (mounted) {
+        setState(() => isLoading = false);
+      }
+    }
+  }
+
+  Future<void> loadUser(String pinfl) async {
+    try {
+      final user = await apiService.fetchUser(pinfl);
+      // User bilan ishlash...
+    } catch (e) {
+      if (mounted) {
+        ApiService.handleError(context, e);
+      }
+    }
+  }
+}
+*/

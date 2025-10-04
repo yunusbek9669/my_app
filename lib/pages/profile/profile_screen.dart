@@ -1,112 +1,228 @@
-import 'package:flutter/cupertino.dart';
+import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'package:my_app/pages/profile/profile_menu_widget.dart';
-import 'package:my_app/pages/profile/update_profile_screen.dart';
-
 import '../../models/user_info.dart';
-import '../../services/auth_service.dart';
-import '../../utils.dart';
 
 class ProfileScreen extends StatelessWidget {
-  final UserInfo? userInfo;
-  const ProfileScreen({Key? key, this.userInfo, required Future<void> Function() onLogout}) : super(key: key);
+  final UserInfo userInfo;
+  final VoidCallback? onLogout;
+
+  const ProfileScreen({
+    Key? key,
+    required this.userInfo,
+    this.onLogout,
+  }) : super(key: key);
+
+  // Base64 dan byte array olish
+  Uint8List? _getImageBytes() {
+    final imageData = userInfo.imageUrl; // imageUrl yoki photoUrl
+    if (imageData == null || imageData.isEmpty) {
+      return null;
+    }
+
+    try {
+      // Agar data URI bo'lsa
+      if (imageData.startsWith('data:')) {
+        final base64String = imageData.split(',').last;
+        return base64Decode(base64String);
+      }
+      // Oddiy base64 string bo'lsa
+      return base64Decode(imageData);
+    } catch (e) {
+      debugPrint('Image decode error: $e');
+      return null;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final AuthService authService = AuthService();
-    final imageBytes = base64FromDataUri(userInfo!.imageUrl);
+    final imageBytes = _getImageBytes();
+
     return Scaffold(
       appBar: AppBar(
-        title: Text("Profile", style: Theme.of(context).textTheme.displayMedium),
-        iconTheme: const IconThemeData(
-          color: Colors.white, // drawer icon rangi
-          size: 30,            // icon kattaligi
-        ),
-        backgroundColor: Colors.indigo,
+        title: const Text('Profil'),
+        actions: [
+          if (onLogout != null)
+            IconButton(
+              icon: const Icon(Icons.logout),
+              onPressed: onLogout,
+              tooltip: 'Chiqish',
+            ),
+        ],
       ),
-      body: SingleChildScrollView(
-        child: Container(
-          padding: const EdgeInsets.all(5),
+      body: RefreshIndicator(
+        onRefresh: () async {
+          // Refresh logic - parent widget'dan keladi
+        },
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(16.0),
           child: Column(
             children: [
-
-              /// -- IMAGE
-              Stack(
-                children: [
-                  SizedBox(
-                    width: 120,
-                    height: 120,
-                    child: ClipRRect(
-                        borderRadius: BorderRadius.circular(100), child: Hero(
-                      tag: "userInfo-${userInfo!.username ?? 'unknown'}",
-                      child: Image.memory(
-                        imageBytes,
-                        height: 80,
-                        fit: BoxFit.cover,
-                      ),
-                    ))
-                  ),
-                  Positioned(
-                    bottom: 0,
-                    right: 0,
-                    child: Container(
-                      width: 35,
-                      height: 35,
-                      decoration: BoxDecoration(borderRadius: BorderRadius.circular(100), color: Colors.amber),
-                      child: const Icon(
-                        Icons.camera_alt,
-                        color: Colors.black,
-                        size: 20,
-                      ),
+              // Avatar
+              Hero(
+                tag: "userInfo-${userInfo.pinfl}",
+                child: CircleAvatar(
+                  radius: 60,
+                  backgroundColor: Colors.grey[300],
+                  backgroundImage: imageBytes != null
+                      ? MemoryImage(imageBytes)
+                      : null,
+                  child: imageBytes == null
+                      ? Text(
+                    userInfo.fullName.isNotEmpty
+                        ? userInfo.fullName[0].toUpperCase()
+                        : '?',
+                    style: const TextStyle(
+                      fontSize: 48,
+                      fontWeight: FontWeight.bold,
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              Text(userInfo!.fullName, style: Theme.of(context).textTheme.bodyLarge),
-              Text(userInfo!.title, style: Theme.of(context).textTheme.displayMedium),
-              const SizedBox(height: 20),
-
-              /// -- BUTTON
-              SizedBox(
-                width: 200,
-                child: ElevatedButton(
-                  onPressed: () => Get.to(() => const UpdateProfileScreen()),
-                  style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blueAccent, side: BorderSide.none, shape: const StadiumBorder()),
-                  child: const Text("edit Profile", style: TextStyle(color: Colors.black45)),
+                  )
+                      : null,
                 ),
               ),
-              const SizedBox(height: 30),
-              const Divider(),
-              const SizedBox(height: 10),
+              const SizedBox(height: 16),
 
-              /// -- MENU
-              ProfileMenuWidget(title: "Settings", icon: const Icon(Icons.settings_rounded), onPress: () {}),
-              ProfileMenuWidget(title: "Billing Details", icon: const Icon(Icons.wallet), onPress: () {}),
-              ProfileMenuWidget(title: "User Management", icon: const Icon(Icons.check_circle_outline), onPress: () {}),
-              const Divider(),
-              const SizedBox(height: 10),
-              ProfileMenuWidget(title: "Information", icon: const Icon(Icons.info), onPress: () {}),
-              ProfileMenuWidget(
-                  title: "Logout",
-                  icon: const Icon(Icons.logout, color: Colors.red),
-                  textColor: Colors.red,
-                  endIcon: false,
-                  onPress: () async {
-                    await authService.logout();
-                    // logout bo‘lgach login page’ga qaytaramiz
-                    Navigator.pushNamedAndRemoveUntil(
-                      context,
-                      '/login',
-                          (route) => false, // barcha stackni tozalash
-                    );
-                  }),
+              // Full name
+              Text(
+                userInfo.fullName,
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+
+              // PINFL
+              Text(
+                'PINFL: ${userInfo.pinfl}',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Colors.grey[600],
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // Info Cards
+              _buildInfoCard(
+                context,
+                icon: Icons.cake_outlined,
+                title: 'Tug\'ilgan sana',
+                value: userInfo.birthDate ?? 'Kiritilmagan',
+              ),
+              const SizedBox(height: 12),
+
+              _buildInfoCard(
+                context,
+                icon: Icons.person_outline,
+                title: 'Jins',
+                value: _getGenderText(userInfo.gender),
+              ),
+              const SizedBox(height: 12),
+
+              _buildInfoCard(
+                context,
+                icon: Icons.phone_outlined,
+                title: 'Telefon',
+                value: userInfo.phone ?? 'Kiritilmagan',
+              ),
+              const SizedBox(height: 12),
+
+              _buildInfoCard(
+                context,
+                icon: Icons.email_outlined,
+                title: 'Email',
+                value: userInfo.email ?? 'Kiritilmagan',
+              ),
+              const SizedBox(height: 12),
+
+              _buildInfoCard(
+                context,
+                icon: Icons.location_on_outlined,
+                title: 'Manzil',
+                value: userInfo.address ?? 'Kiritilmagan',
+                maxLines: 3,
+              ),
+              const SizedBox(height: 24),
+
+              // Edit profile button (optional)
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    // Navigate to edit profile
+                    // Navigator.pushNamed(context, '/edit-profile', arguments: userInfo);
+                  },
+                  icon: const Icon(Icons.edit),
+                  label: const Text('Profilni tahrirlash'),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                  ),
+                ),
+              ),
             ],
           ),
         ),
       ),
     );
+  }
+
+  Widget _buildInfoCard(
+      BuildContext context, {
+        required IconData icon,
+        required String title,
+        required String value,
+        int maxLines = 1,
+      }) {
+    return Card(
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Row(
+          children: [
+            Icon(icon, color: Theme.of(context).primaryColor, size: 28),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    value,
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      fontWeight: FontWeight.w500,
+                    ),
+                    maxLines: maxLines,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _getGenderText(String? gender) {
+    if (gender == null || gender.isEmpty) return 'Kiritilmagan';
+
+    switch (gender.toLowerCase()) {
+      case 'male':
+      case 'erkak':
+      case 'm':
+        return 'Erkak';
+      case 'female':
+      case 'ayol':
+      case 'f':
+        return 'Ayol';
+      default:
+        return gender;
+    }
   }
 }

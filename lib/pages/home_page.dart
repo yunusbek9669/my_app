@@ -27,7 +27,8 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> initApi() async {
     try {
-      final accessToken = await AuthService().getAccessToken();
+      final authService = AuthService();
+      final accessToken = await authService.getAccessToken();
 
       if (accessToken == null) {
         // Token yo'q bo'lsa login sahifasiga yo'naltirish
@@ -49,10 +50,11 @@ class _HomePageState extends State<HomePage> {
         await loadData();
       }
     } catch (e) {
+      debugPrint('initApi xatolik: $e');
       if (mounted) {
         setState(() {
           loading = false;
-          errorMessage = 'Tizimga ulanishda xatolik';
+          errorMessage = 'Tizimga ulanishda xatolik: ${e.toString()}';
         });
       }
     }
