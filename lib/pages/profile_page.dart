@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import "package:flutter_svg/flutter_svg.dart";
-import '../models/user.dart';
+import 'package:my_app/pages/profile/profile_screen.dart';
+import '../models/user_info.dart';
 import '../services/api_client.dart';
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
-import '../utils.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -14,9 +13,11 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  User? user;
+  UserInfo? userInfo;
   ApiService? api;
   bool loading = true;
+  String? errorMessage;
+  String? pinfl; // PINFL ni saqlash uchun
 
   @override
   void initState() {
@@ -25,209 +26,266 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> initApi() async {
-    final accessToken = await AuthService().getAccessToken();
-    if (accessToken == null) return;
-
-    final client = await ApiClient.create(
-      "http://localhost:8080/api",
-      token: accessToken,
-    );
-
-    setState(() {
-      api = ApiService(client.dio, context);
-    });
-
-    await loadData();
-  }
-
-  Future<void> loadData() async {
-    if (api == null) return;
     try {
-      final data = await api!.fetchUser();
-      setState(() {
-        user = data;
-        loading = false;
-      });
-    } catch (e) {
-      setState(() {
-        loading = false;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
+      final accessToken = await AuthService().getAccessToken();
+
+      if (accessToken == null) {
+        // Token yo'q bo'lsa login sahifasiga
+        if (mounted) {
+          Navigator.pushReplacementNamed(context, '/login');
+        }
+        return;
+      }
+
+      // PINFL ni olish (AuthService'dan yoki SharedPreferences'dan)
+      pinfl = await AuthService().getPinfl(); // Bu metodingiz bo'lishi kerak
+
+      if (pinfl == null) {
+        if (mounted) {
+          setState(() {
+            loading = false;
+            errorMessage = 'PINFL topilmadi';
+          });
+        }
+        return;
+      }
+
+      final client = await ApiClient.create(
+        "http://localhost:8080/api",
+        token: accessToken,
       );
+
+      if (mounted) {
+        setState(() {
+          api = ApiService(client.dio);
+        });
+        await loadData();
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          loading = false;
+          errorMessage = 'Tizimga ulanishda xatolik';
+        });
+      }
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return ProfileScreen(user: user, loading: loading); // 🔹 shu joyda chaqirasiz
+  Future<void> loadData() async {
+    if (api == null || pinfl == null) return;
+
+    setState(() {
+      loading = true;
+      errorMessage = null;
+    });
+
+    try {
+      final data = await api!.fetchUser(pinfl!); // ✅ PINFL uzatildi
+
+      if (mounted) {
+        setState(() {
+          userInfo = data;
+          loading = false;
+        });
+      }
+    } on ApiWarningException catch (e) {
+      // Warning holati
+      if (mounted) {
+        ApiService.handleError(context, e);
+        setState(() {
+          loading = false;
+          errorMessage = e.message;
+        });
+      }
+    } on ApiErrorException catch (e) {
+      // Error holati
+      if (mounted) {
+        ApiService.handleError(context, e);
+        setState(() {
+          loading = false;
+          errorMessage = e.message;
+        });
+      }
+    } catch (e) {
+      // Boshqa xatoliklar
+      if (mounted) {
+        ApiService.handleError(context, e);
+        setState(() {
+          loading = false;
+          errorMessage = 'Foydalanuvchi ma\'lumotini yuklashda xatolik';
+        });
+      }
+    }
   }
-}
 
-class ProfileScreen extends StatelessWidget {
-  final User? user;
-  final bool loading;
-
-  const ProfileScreen({super.key, required this.user, required this.loading});
+  Future<void> logout() async {
+    try {
+      await AuthService().logout();
+      if (mounted) {
+        Navigator.pushReplacementNamed(context, '/login');
+      }
+    } catch (e) {
+      if (mounted) {
+        ApiService.handleError(context, e);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        title: const Text("Profile"),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(vertical: 20),
+      body: _buildBody(),
+    );
+  }
+
+  Widget _buildBody() {
+    // Loading holati
+    if (loading) {
+      return const Center(
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            ProfilePic(user: user, loading: loading),
-            const SizedBox(height: 20),
-            ProfileMenu(
-              text: "My Account",
-              icon: "assets/icons/User Icon.svg",
-              press: () => {},
+            CircularProgressIndicator(),
+            SizedBox(height: 16),
+            Text('Yuklanmoqda...'),
+          ],
+        ),
+      );
+    }
+
+    // Xatolik holati
+    if (errorMessage != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.error_outline,
+                size: 64,
+                color: Colors.red,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                errorMessage!,
+                style: const TextStyle(fontSize: 16),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton.icon(
+                onPressed: loadData,
+                icon: const Icon(Icons.refresh),
+                label: const Text('Qayta urinish'),
+              ),
+              const SizedBox(height: 12),
+              TextButton.icon(
+                onPressed: logout,
+                icon: const Icon(Icons.logout),
+                label: const Text('Chiqish'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // Ma'lumot topilmadi
+    if (userInfo == null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.person_off_outlined,
+              size: 64,
+              color: Colors.grey[400],
             ),
-            ProfileMenu(
-              text: "Notifications",
-              icon: "assets/icons/Bell.svg",
-              press: () {},
+            const SizedBox(height: 16),
+            Text(
+              'Foydalanuvchi ma\'lumoti topilmadi',
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.grey[600],
+              ),
             ),
-            ProfileMenu(
-              text: "Settings",
-              icon: "assets/icons/Settings.svg",
-              press: () {},
-            ),
-            ProfileMenu(
-              text: "Help Center",
-              icon: "assets/icons/Question mark.svg",
-              press: () {},
-            ),
-            ProfileMenu(
-              text: "Log Out",
-              icon: "assets/icons/Log out.svg",
-              press: () {},
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: loadData,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Qayta yuklash'),
             ),
           ],
         ),
+      );
+    }
+
+    // Muvaffaqiyatli - ProfileScreen ko'rsatish
+    return RefreshIndicator(
+      onRefresh: loadData,
+      child: ProfileScreen(
+        userInfo: userInfo!,
+        onLogout: logout, // Agar ProfileScreen'da logout kerak bo'lsa
       ),
     );
   }
 }
 
-class ProfilePic extends StatelessWidget {
-  final User? user;
-  final bool loading;
+// OPTIONAL: ProfileScreen uchun onLogout parametri
+// profile_screen.dart faylida:
+/*
+class ProfileScreen extends StatelessWidget {
+  final UserInfo userInfo;
+  final VoidCallback? onLogout;
 
-  const ProfilePic({Key? key, required this.user, required this.loading})
-      : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    if (loading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    if (user == null) {
-      return const Center(child: Text("Foydalanuvchi maʼlumoti topilmadi"));
-    }
-
-    final imageBytes = base64FromDataUri(user!.imageUrl);
-
-    return SizedBox(
-      height: 115,
-      width: 115,
-      child: Stack(
-        fit: StackFit.expand,
-        clipBehavior: Clip.none,
-        children: [
-          Hero(
-            tag: "user-${user!.username ?? 'unknown'}",
-            child: Image.memory(
-              imageBytes,
-              height: 80,
-              fit: BoxFit.cover,
-            ),
-          ),
-          Positioned(
-            right: -16,
-            bottom: 0,
-            child: SizedBox(
-              height: 46,
-              width: 46,
-              child: TextButton(
-                style: TextButton.styleFrom(
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(50),
-                    side: const BorderSide(color: Colors.white),
-                  ),
-                  backgroundColor: const Color(0xFFF5F6F9),
-                ),
-                onPressed: () {},
-                child: const Icon(
-                  Icons.camera_alt,
-                  color: Colors.black45,
-                  size: 16,
-                ),
-              ),
-            ),
-          )
-        ],
-      ),
-    );
-  }
-}
-
-class ProfileMenu extends StatelessWidget {
-  const ProfileMenu({
+  const ProfileScreen({
     Key? key,
-    required this.text,
-    required this.icon,
-    this.press,
+    required this.userInfo,
+    this.onLogout,
   }) : super(key: key);
 
-  final String text, icon;
-  final VoidCallback? press;
-
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-      child: TextButton(
-        style: TextButton.styleFrom(
-          foregroundColor: const Color(0xFFFF7643),
-          padding: const EdgeInsets.all(20),
-          shape:
-          RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-          backgroundColor: const Color(0xFFF5F6F9),
-        ),
-        onPressed: press,
-        child: Row(
-          children: [
-            SvgPicture.asset(
-              icon,
-              colorFilter:
-              const ColorFilter.mode(Color(0xFFFF7643), BlendMode.srcIn),
-              width: 22,
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Profil'),
+        actions: [
+          if (onLogout != null)
+            IconButton(
+              icon: const Icon(Icons.logout),
+              onPressed: onLogout,
+              tooltip: 'Chiqish',
             ),
-            const SizedBox(width: 20),
-            Expanded(
-              child: Text(
-                text,
-                style: const TextStyle(
-                  color: Color(0xFF757575),
+        ],
+      ),
+      body: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              // User info ko'rsatish
+              CircleAvatar(
+                radius: 50,
+                child: Text(
+                  userInfo.firstName[0].toUpperCase(),
+                  style: const TextStyle(fontSize: 32),
                 ),
               ),
-            ),
-            const Icon(
-              Icons.arrow_forward_ios,
-              color: Color(0xFF757575),
-            ),
-          ],
+              const SizedBox(height: 16),
+              Text(
+                '${userInfo.firstName} ${userInfo.lastName}',
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              // Qolgan ma'lumotlar...
+            ],
+          ),
         ),
       ),
     );
   }
 }
+*/

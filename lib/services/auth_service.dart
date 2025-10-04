@@ -1,50 +1,129 @@
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dio/dio.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class AuthService {
-  final Dio dio = Dio(BaseOptions(baseUrl: "http://localhost:8080/api")); // 🔹 backend url
-  final storage = const FlutterSecureStorage();
+  static const String _accessTokenKey = 'access_token';
+  static const String _refreshTokenKey = 'refresh_token';
+  static const String _pinflKey = 'pinfl';
 
-  Future<bool> login(String username, String password) async {
+  final Dio _dio;
+
+  AuthService({Dio? dio})
+      : _dio = dio ?? Dio(BaseOptions(baseUrl: 'http://localhost:8080/api'));
+
+  // Login metodi
+  Future<Map<String, dynamic>> login(String pinfl, String password) async {
     try {
-      final response = await dio.post(
-        "/auth/login",
+      final response = await _dio.post(
+        '/auth/login',
         data: {
-          "username": username,
-          "password": password,
+          'username': pinfl,
+          'password': password,
         },
-        options: Options(contentType: Headers.jsonContentType),
       );
 
-      final data = response.data;
-      final accessToken = data['access_token']; // tokenni oldik
+      if (response.statusCode == 200 && response.data['access_token'] != null && response.data['access_token'].isNotEmpty) {
+        final data = response.data;
 
-      if (response.statusCode == 200 && response.data["access_token"] != null) {
-        // Tokenni secure storage’ga yozamiz
-        await storage.write(key: "access_token", value: response.data["access_token"]);
-        await storage.write(key: "user", value: response.data);
-        if (response.data["refresh_token"] != null) {
-          await storage.write(key: "refresh_token", value: response.data["refresh_token"]);
-        }
-        return true;
+        // Tokenlar va PINFL ni saqlash
+        await saveTokens(
+          accessToken: data['access_token'],
+          refreshToken: data['refresh_token'],
+          pinfl: pinfl,
+        );
+
+        return {
+          'success': true,
+          'message': 'Login muvaffaqiyatli',
+          'data': data,
+        };
       } else {
-        return false;
+        return {
+          'success': false,
+          'message': response.data['message'] ?? 'Login xatolik',
+        };
       }
+    } on DioException catch (e) {
+      return {
+        'success': false,
+        'message': e.response?.data['message'] ?? 'Serverga ulanishda xatolik',
+      };
     } catch (e) {
-      print("Login xatolik: $e");
-      return false;
+      print(e);
+      return {
+        'success': false,
+        'message': 'Kutilmagan xatolik: $e',
+      };
     }
   }
 
+  // Token va PINFL saqlash
+  Future<void> saveTokens({
+    required String accessToken,
+    required String refreshToken,
+    required String pinfl,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_accessTokenKey, accessToken);
+    await prefs.setString(_refreshTokenKey, refreshToken);
+    await prefs.setString(_pinflKey, pinfl);
+  }
+
+  // Access token olish
   Future<String?> getAccessToken() async {
-    return await storage.read(key: "access_token");
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_accessTokenKey);
   }
 
-  Future<String?> getUser() async {
-    return await storage.read(key: "user");
+  // Refresh token olish
+  Future<String?> getRefreshToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_refreshTokenKey);
   }
 
+  // PINFL olish
+  Future<String?> getPinfl() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_pinflKey);
+  }
+
+  // Logout - barcha ma'lumotlarni o'chirish
   Future<void> logout() async {
-    await storage.deleteAll();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_accessTokenKey);
+    await prefs.remove(_refreshTokenKey);
+    await prefs.remove(_pinflKey);
+  }
+
+  // Login tekshirish
+  Future<bool> isLoggedIn() async {
+    final token = await getAccessToken();
+    return token != null && token.isNotEmpty;
+  }
+
+  // Token yangilash (refresh)
+  Future<bool> refreshToken() async {
+    try {
+      final refreshToken = await getRefreshToken();
+      if (refreshToken == null) return false;
+
+      final response = await _dio.post(
+        '/auth/refresh',
+        data: {'refresh_token': refreshToken},
+      );
+
+      if (response.statusCode == 200) {
+        final data = response.data['data'];
+        await saveTokens(
+          accessToken: data['access_token'],
+          refreshToken: data['refresh_token'],
+          pinfl: await getPinfl() ?? '',
+        );
+        return true;
+      }
+      return false;
+    } catch (e) {
+      return false;
+    }
   }
 }

@@ -47,6 +47,13 @@ class MainLayout extends StatelessWidget {
               },
             ),
             ListTile(
+              leading: const Icon(Icons.account_circle),
+              title: const Text("Profile"),
+              onTap: () {
+                Navigator.pushNamed(context, '/profile');
+              },
+            ),
+            ListTile(
               leading: const Icon(Icons.settings),
               title: const Text("Settings"),
               onTap: () {

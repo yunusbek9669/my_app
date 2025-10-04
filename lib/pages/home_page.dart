@@ -17,6 +17,7 @@ class _HomePageState extends State<HomePage> {
   ApiService? api;
   List<Nature> list = [];
   bool loading = true;
+  String? errorMessage;
 
   @override
   void initState() {
@@ -24,39 +25,83 @@ class _HomePageState extends State<HomePage> {
     initApi();
   }
 
-  // 🔹 initApi() ni token bilan ishlashga moslab o'zgartirdik
   Future<void> initApi() async {
-    final accessToken = await AuthService().getAccessToken(); // login tokenini o‘qi
-    if (accessToken == null) return;
+    try {
+      final accessToken = await AuthService().getAccessToken();
 
-    final client = await ApiClient.create(
-      "http://localhost:8080/api",
-      token: accessToken, // tokenni uzatish
-    );
+      if (accessToken == null) {
+        // Token yo'q bo'lsa login sahifasiga yo'naltirish
+        if (mounted) {
+          Navigator.pushReplacementNamed(context, '/login');
+        }
+        return;
+      }
 
-    setState(() {
-      api = ApiService(client.dio, context);
-    });
+      final client = await ApiClient.create(
+        "http://localhost:8080/api",
+        token: accessToken,
+      );
 
-    await loadData();
+      if (mounted) {
+        setState(() {
+          api = ApiService(client.dio);
+        });
+        await loadData();
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          loading = false;
+          errorMessage = 'Tizimga ulanishda xatolik';
+        });
+      }
+    }
   }
 
   Future<void> loadData() async {
     if (api == null) return;
+
+    setState(() {
+      loading = true;
+      errorMessage = null;
+    });
+
     try {
       final data = await api!.fetchCertificates();
-      setState(() {
-        list = data;
-        loading = false;
-      });
+
+      if (mounted) {
+        setState(() {
+          list = data;
+          loading = false;
+        });
+      }
+    } on ApiWarningException catch (e) {
+      // Warning - ma'lumot yo'q lekin kritik emas
+      if (mounted) {
+        ApiService.handleError(context, e);
+        setState(() {
+          list = [];
+          loading = false;
+        });
+      }
+    } on ApiErrorException catch (e) {
+      // Critical error
+      if (mounted) {
+        ApiService.handleError(context, e);
+        setState(() {
+          loading = false;
+          errorMessage = e.message;
+        });
+      }
     } catch (e) {
-      setState(() {
-        loading = false;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())), // foydalanuvchiga xabar
-      );
-      print("Xatolik: $e");
+      // Boshqa xatoliklar
+      if (mounted) {
+        ApiService.handleError(context, e);
+        setState(() {
+          loading = false;
+          errorMessage = 'Ma\'lumotlarni yuklashda xatolik';
+        });
+      }
     }
   }
 
@@ -72,13 +117,110 @@ class _HomePageState extends State<HomePage> {
           Navigator.pushReplacementNamed(context, '/profile');
         }
       },
-      body: loading
-          ? const Center(child: CircularProgressIndicator())
-          : ListView.builder(
+      body: _buildBody(),
+    );
+  }
+
+  Widget _buildBody() {
+    // Loading holati
+    if (loading) {
+      return const Center(
+        child: CircularProgressIndicator(),
+      );
+    }
+
+    // Xatolik holati
+    if (errorMessage != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(
+              Icons.error_outline,
+              size: 64,
+              color: Colors.red,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              errorMessage!,
+              style: const TextStyle(fontSize: 16),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: loadData,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Qayta urinish'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Bo'sh ro'yxat holati
+    if (list.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.image_not_supported_outlined,
+              size: 64,
+              color: Colors.grey[400],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Ma\'lumot topilmadi',
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.grey[600],
+              ),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: loadData,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Yangilash'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Muvaffaqiyatli holat - ro'yxat ko'rsatish
+    return RefreshIndicator(
+      onRefresh: loadData,
+      child: ListView.builder(
+        physics: const AlwaysScrollableScrollPhysics(),
         itemCount: list.length,
         itemBuilder: (context, index) {
           return MyCard(nature: list[index]);
         },
+      ),
+    );
+  }
+}
+
+// OPTIONAL: Agar loading indicator dizayni bo'lsa
+class _LoadingWidget extends StatelessWidget {
+  const _LoadingWidget();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const CircularProgressIndicator(),
+          const SizedBox(height: 16),
+          Text(
+            'Yuklanmoqda...',
+            style: TextStyle(
+              color: Colors.grey[600],
+              fontSize: 14,
+            ),
+          ),
+        ],
       ),
     );
   }

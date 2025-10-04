@@ -1,4 +1,4 @@
-class User {
+class UserInfo {
   final String username;
   final String imageUrl;
   final String fullName;
@@ -7,10 +7,12 @@ class User {
   final String title;
   final String phone;
 
-  User(this.username, this.imageUrl, this.fullName, this.department, this.position, this.title, this.phone);
+  final Map<String, dynamic>? token;
 
-  factory User.fromJson(Map<String, dynamic> json) {
-    return User(
+  UserInfo(this.username, this.imageUrl, this.fullName, this.department, this.position, this.title, this.phone, this.token);
+
+  factory UserInfo.fromJson(Map<String, dynamic> json) {
+    return UserInfo(
       json['username'],
       json['imageUrl'],
       json['fullName'],
@@ -18,6 +20,7 @@ class User {
       json['position'],
       json['title'],
       json['phone'],
+      json['token'] as Map<String, dynamic>?,
     );
   }
 }

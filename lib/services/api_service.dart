@@ -1,23 +1,24 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import '../models/nature.dart';
-import '../models/user.dart';
+import '../models/user_info.dart';
 import 'auth_service.dart';
 
 class ApiService {
   final Dio dio;
-  final BuildContext context;
 
-  ApiService(this.dio, this.context);
+  ApiService(this.dio);
 
   Future<List<Nature>> fetchCertificates() async {
     try {
       final String? token = await AuthService().getAccessToken();
-      if (token == null) throw Exception("Token topilmadi!");
+      if (token == null) {
+        throw Exception("Token topilmadi!");
+      }
 
       final response = await dio.post(
         "/certificate/certificates-for-test",
-        data: ["AV-II"],
+        data: ["NV-I"],
         options: Options(
           headers: {
             "Authorization": "Bearer $token",
@@ -26,31 +27,61 @@ class ApiService {
         ),
       );
 
-      final responseData = response.data["data"];
+      // Response strukturasini tekshirish
+      final responseData = response.data;
 
-      if (responseData is List) {
-        return responseData
+      // Agar data o'rniga to'g'ridan-to'g'ri status, code, message bo'lsa
+      if (responseData is Map && responseData.containsKey('status') && responseData.containsKey('message')) {
+        final status = responseData['status'];
+        final code = responseData['code'];
+        final message = responseData['message'];
+
+        // 201 - warning, 200 - success, boshqalar - error
+        if (status == 201) {
+          // Warning - ma'lumot yo'q, lekin kritik xato emas
+          throw ApiWarningException(message ?? 'Ogohlantirish', code: code);
+        } else if (status != 200) {
+          // Error
+          throw ApiErrorException(message ?? 'Noma\'lum xatolik', code: code);
+        }
+      }
+
+      // Normal holat: data mavjud
+      final data = responseData["data"];
+
+      if (data == null) {
+        return [];
+      }
+
+      if (data is List) {
+        return data
             .map((json) => Nature.fromJson(json as Map<String, dynamic>))
             .toList();
-      } else if (responseData is Map) {
-        return [Nature.fromJson(responseData.cast<String, dynamic>())];
+      } else if (data is Map) {
+        return [Nature.fromJson(data.cast<String, dynamic>())];
       } else {
-        throw Exception("Kutilmagan javob: $responseData");
+        throw Exception("Kutilmagan javob formati: $data");
       }
     } on DioException catch (e) {
-      print("API xatolik: $e");
-      return [];
+      debugPrint("API xatolik: ${e.message}");
+      debugPrint("Response: ${e.response?.data}");
+      rethrow;
+    } catch (e) {
+      debugPrint("Umumiy xatolik: $e");
+      rethrow;
     }
   }
 
-  Future<User> fetchUser() async {
+  Future<UserInfo> fetchUser(String pinfl) async {
     try {
       final String? token = await AuthService().getAccessToken();
-      if (token == null) throw Exception("Token topilmadi!");
+      if (token == null) {
+        throw Exception("Token topilmadi!");
+      }
 
       final response = await dio.post(
         "/user/user",
-        data: {"pinfl": 33008965210023},
+        data: {"pinfl": pinfl},
         options: Options(
           headers: {
             "Authorization": "Bearer $token",
@@ -59,10 +90,99 @@ class ApiService {
         ),
       );
 
-      return User.fromJson(response.data["data"]); // ✅ User qaytaradi
+      // Status tekshirish
+      if (response.data['status'] != null && response.data['status'] != true) {
+        throw Exception(response.data['message'] ?? 'Foydalanuvchi topilmadi');
+      }
+
+      final userData = response.data["data"];
+      if (userData == null) {
+        throw Exception("Foydalanuvchi ma'lumoti topilmadi");
+      }
+
+      return UserInfo.fromJson(userData);
     } on DioException catch (e) {
-      print("API xatolik: $e");
-      rethrow; // ❌ bo‘sh user qaytarmang
+      debugPrint("API xatolik: ${e.message}");
+      debugPrint("Response: ${e.response?.data}");
+      rethrow;
+    } catch (e) {
+      debugPrint("Umumiy xatolik: $e");
+      rethrow;
     }
   }
+
+  static void handleError(BuildContext context, dynamic error) {
+    String message = 'Xatolik yuz berdi';
+    Color backgroundColor = Colors.red;
+    IconData icon = Icons.error;
+
+    if (error is ApiWarningException) {
+      // Warning - sariq rang
+      message = error.message;
+      backgroundColor = Colors.orange;
+      icon = Icons.warning_amber;
+    } else if (error is ApiErrorException) {
+      // Error - qizil rang
+      message = error.message;
+      backgroundColor = Colors.red;
+      icon = Icons.error_outline;
+    } else if (error is DioException) {
+      if (error.response != null) {
+        message = error.response?.data['message'] ?? 'Server xatoligi';
+      } else if (error.type == DioExceptionType.connectionTimeout) {
+        message = 'Serverga ulanish vaqti tugadi';
+      } else if (error.type == DioExceptionType.receiveTimeout) {
+        message = 'Javob kutish vaqti tugadi';
+      } else {
+        message = 'Internetga ulanishda xatolik';
+      }
+    } else if (error is Exception) {
+      message = error.toString().replaceAll('Exception: ', '');
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(icon, color: Colors.white),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                message,
+                style: const TextStyle(fontSize: 15),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: backgroundColor,
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 4),
+        action: SnackBarAction(
+          label: 'OK',
+          textColor: Colors.white,
+          onPressed: () {},
+        ),
+      ),
+    );
+  }
+}
+
+class ApiWarningException implements Exception {
+  final String message;
+  final String? code;
+
+  ApiWarningException(this.message, {this.code});
+
+  @override
+  String toString() => message;
+}
+
+class ApiErrorException implements Exception {
+  final String message;
+  final String? code;
+
+  ApiErrorException(this.message, {this.code});
+
+  @override
+  String toString() => message;
 }
