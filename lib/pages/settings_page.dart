@@ -18,7 +18,7 @@ class SettingsPage extends StatelessWidget {
         } else if (index == 1) {
           Navigator.pushReplacementNamed(context, '/search');
         } else if (index == 2) {
-          Navigator.pushReplacementNamed(context, '/profile');
+          Navigator.pushReplacementNamed(context, '/settings');
         }
       },
     );

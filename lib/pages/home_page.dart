@@ -116,7 +116,7 @@ class _HomePageState extends State<HomePage> {
         if (index == 1) {
           Navigator.pushReplacementNamed(context, '/search');
         } else if (index == 2) {
-          Navigator.pushReplacementNamed(context, '/profile');
+          Navigator.pushReplacementNamed(context, '/settings');
         }
       },
       body: _buildBody(),

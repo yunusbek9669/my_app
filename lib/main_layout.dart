@@ -88,8 +88,8 @@ class MainLayout extends StatelessWidget {
         selectedItemColor: Colors.indigo,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
-          BottomNavigationBarItem(icon: Icon(Icons.search), label: "Search"),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
+          BottomNavigationBarItem(icon: Icon(Icons.add), label: "Adding"),
+          BottomNavigationBarItem(icon: Icon(Icons.settings), label: "Setting"),
         ],
       ),
     );
