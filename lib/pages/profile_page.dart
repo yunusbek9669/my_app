@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:my_app/pages/profile/profile_screen.dart';
+import '../config/api_config.dart';
 import '../models/user_info.dart';
 import '../services/api_client.dart';
 import '../services/api_service.dart';
@@ -51,7 +52,7 @@ class _ProfilePageState extends State<ProfilePage> {
       }
 
       final client = await ApiClient.create(
-        "http://localhost:8080/api",
+        ApiConfig.baseUrl, // ← O'zgargan qism
         token: accessToken,
       );
 

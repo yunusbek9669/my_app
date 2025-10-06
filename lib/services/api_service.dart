@@ -82,8 +82,8 @@ class ApiService {
       debugPrint('Fetching user with PINFL: $pinfl');
 
       final response = await dio.post(
-        "/user/user",
-        data: {"pinfl": pinfl},
+        "/adaptive/get-reference-data?count=1&last_number=0&jshshir=$pinfl",
+        data: {"user": "{users}.*"},
         options: Options(
           headers: {
             "Authorization": "Bearer $token",
@@ -97,7 +97,7 @@ class ApiService {
         throw Exception(response.data['message'] ?? 'Foydalanuvchi topilmadi');
       }
 
-      final userData = response.data["data"];
+      final userData = response.data["items"][0]['user'];
       if (userData == null) {
         throw Exception("Foydalanuvchi ma'lumoti topilmadi");
       }

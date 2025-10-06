@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:my_app/widgets/my-card.dart';
+import '../config/api_config.dart';
 import '../main_layout.dart';
 import '../models/nature.dart';
 import '../services/api_client.dart';
@@ -39,7 +40,7 @@ class _HomePageState extends State<HomePage> {
       }
 
       final client = await ApiClient.create(
-        "http://localhost:8080/api",
+        ApiConfig.baseUrl, // ← O'zgargan qism
         token: accessToken,
       );
 

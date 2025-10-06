@@ -1,9 +1,9 @@
 class UserInfo {
   final String? id;
   final String pinfl;
-  final String fullName;
+  final String full_name;
   final String? middleName;
-  final String? birthDate;
+  final String? birth_date;
   final String? gender;
   final String? phone;
   final String? email;
@@ -13,9 +13,9 @@ class UserInfo {
   UserInfo({
     this.id,
     required this.pinfl,
-    required this.fullName,
+    required this.full_name,
     this.middleName,
-    this.birthDate,
+    this.birth_date,
     this.gender,
     this.phone,
     this.email,
@@ -28,13 +28,13 @@ class UserInfo {
     return UserInfo(
       id: json['id']?.toString(),
       pinfl: json['pinfl']?.toString() ?? '',
-      fullName: json['first_name']?.toString() ??
-          json['fullName']?.toString() ??
+      full_name: json['first_name']?.toString() ??
+          json['full_name']?.toString() ??
           'Noma\'lum',
       middleName: json['middle_name']?.toString() ??
           json['middleName']?.toString(),
-      birthDate: json['birth_date']?.toString() ??
-          json['birthDate']?.toString(),
+      birth_date: json['birth_date']?.toString() ??
+          json['birth_date']?.toString(),
       gender: json['gender']?.toString(),
       phone: json['phone']?.toString() ??
           json['phone_number']?.toString(),
@@ -51,9 +51,9 @@ class UserInfo {
     return {
       'id': id,
       'pinfl': pinfl,
-      'first_name': fullName,
+      'first_name': full_name,
       'middle_name': middleName,
-      'birth_date': birthDate,
+      'birth_date': birth_date,
       'gender': gender,
       'phone': phone,
       'email': email,
@@ -66,9 +66,9 @@ class UserInfo {
   UserInfo copyWith({
     String? id,
     String? pinfl,
-    String? fullName,
+    String? full_name,
     String? middleName,
-    String? birthDate,
+    String? birth_date,
     String? gender,
     String? phone,
     String? email,
@@ -78,9 +78,9 @@ class UserInfo {
     return UserInfo(
       id: id ?? this.id,
       pinfl: pinfl ?? this.pinfl,
-      fullName: fullName ?? this.fullName,
+      full_name: full_name ?? this.full_name,
       middleName: middleName ?? this.middleName,
-      birthDate: birthDate ?? this.birthDate,
+      birth_date: birth_date ?? this.birth_date,
       gender: gender ?? this.gender,
       phone: phone ?? this.phone,
       email: email ?? this.email,
@@ -91,6 +91,6 @@ class UserInfo {
 
   @override
   String toString() {
-    return 'UserInfo(pinfl: $pinfl, fullName: $fullName, phone: $phone, email: $email)';
+    return 'UserInfo(pinfl: $pinfl, full_name: $full_name, phone: $phone, email: $email)';
   }
 }

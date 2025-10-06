@@ -28,7 +28,7 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
   @override
   void initState() {
     super.initState();
-    _fullNameController = TextEditingController(text: widget.userInfo.fullName);
+    _fullNameController = TextEditingController(text: widget.userInfo.full_name);
     _middleNameController = TextEditingController(text: widget.userInfo.middleName);
     _phoneController = TextEditingController(text: widget.userInfo.phone);
     _emailController = TextEditingController(text: widget.userInfo.email);
@@ -73,7 +73,7 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
 
     try {
       final updatedUser = widget.userInfo.copyWith(
-        fullName: _fullNameController.text.trim(),
+        full_name: _fullNameController.text.trim(),
         middleName: _middleNameController.text.trim(),
         phone: _phoneController.text.trim(),
         email: _emailController.text.trim(),
@@ -157,8 +157,8 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
                           : null,
                       child: imageBytes == null
                           ? Text(
-                        widget.userInfo.fullName.isNotEmpty
-                            ? widget.userInfo.fullName[0].toUpperCase()
+                        widget.userInfo.full_name.isNotEmpty
+                            ? widget.userInfo.full_name[0].toUpperCase()
                             : '?',
                         style: const TextStyle(
                           fontSize: 48,

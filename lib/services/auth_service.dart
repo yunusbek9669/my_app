@@ -1,5 +1,6 @@
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dio/dio.dart';
+import '../config/api_config.dart';
 
 class AuthService {
   static const String _accessTokenKey = 'access_token';
@@ -9,7 +10,11 @@ class AuthService {
   final Dio _dio;
 
   AuthService({Dio? dio})
-      : _dio = dio ?? Dio(BaseOptions(baseUrl: 'http://localhost:8080/api'));
+      : _dio = dio ?? Dio(BaseOptions(
+    baseUrl: ApiConfig.baseUrl, // ← O'zgargan qism
+    connectTimeout: ApiConfig.connectTimeout,
+    receiveTimeout: ApiConfig.receiveTimeout,
+  ));
 
   // Login metodi
   Future<Map<String, dynamic>> login(String pinfl, String password) async {
