@@ -1,9 +1,9 @@
 class UserInfo {
   final String? id;
   final String pinfl;
-  final String full_name;
+  final String fullName;
   final String? middleName;
-  final String? birth_date;
+  final String? birthDate;
   final String? gender;
   final String? phone;
   final String? email;
@@ -13,9 +13,9 @@ class UserInfo {
   UserInfo({
     this.id,
     required this.pinfl,
-    required this.full_name,
+    required this.fullName,
     this.middleName,
-    this.birth_date,
+    this.birthDate,
     this.gender,
     this.phone,
     this.email,
@@ -27,13 +27,13 @@ class UserInfo {
   factory UserInfo.fromJson(Map<String, dynamic> json) {
     return UserInfo(
       id: json['id']?.toString(),
-      pinfl: json['pinfl']?.toString() ?? '',
-      full_name: json['first_name']?.toString() ??
+      pinfl: json['jshshir']?.toString() ?? '',
+      fullName: json['first_name']?.toString() ??
           json['full_name']?.toString() ??
           'Noma\'lum',
       middleName: json['middle_name']?.toString() ??
           json['middleName']?.toString(),
-      birth_date: json['birth_date']?.toString() ??
+      birthDate: json['birth_date']?.toString() ??
           json['birth_date']?.toString(),
       gender: json['gender']?.toString(),
       phone: json['phone']?.toString() ??
@@ -41,7 +41,7 @@ class UserInfo {
       email: json['email']?.toString(),
       address: json['address']?.toString(),
       imageUrl: json['photo_url']?.toString() ??
-          json['imageUrl']?.toString() ??
+          json['image_url']?.toString() ??
           json['photo']?.toString(),
     );
   }
@@ -51,9 +51,9 @@ class UserInfo {
     return {
       'id': id,
       'pinfl': pinfl,
-      'first_name': full_name,
+      'full_name': fullName,
       'middle_name': middleName,
-      'birth_date': birth_date,
+      'birth_date': birthDate,
       'gender': gender,
       'phone': phone,
       'email': email,
@@ -66,9 +66,9 @@ class UserInfo {
   UserInfo copyWith({
     String? id,
     String? pinfl,
-    String? full_name,
+    String? fullName,
     String? middleName,
-    String? birth_date,
+    String? birthDate,
     String? gender,
     String? phone,
     String? email,
@@ -78,9 +78,9 @@ class UserInfo {
     return UserInfo(
       id: id ?? this.id,
       pinfl: pinfl ?? this.pinfl,
-      full_name: full_name ?? this.full_name,
+      fullName: fullName ?? this.fullName,
       middleName: middleName ?? this.middleName,
-      birth_date: birth_date ?? this.birth_date,
+      birthDate: birthDate ?? this.birthDate,
       gender: gender ?? this.gender,
       phone: phone ?? this.phone,
       email: email ?? this.email,
@@ -91,6 +91,6 @@ class UserInfo {
 
   @override
   String toString() {
-    return 'UserInfo(pinfl: $pinfl, full_name: $full_name, phone: $phone, email: $email)';
+    return 'UserInfo(pinfl: $pinfl, fullName: $fullName, phone: $phone, email: $email)';
   }
 }

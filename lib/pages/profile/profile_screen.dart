@@ -70,8 +70,8 @@ class ProfileScreen extends StatelessWidget {
                       : null,
                   child: imageBytes == null
                       ? Text(
-                    userInfo.full_name.isNotEmpty
-                        ? userInfo.full_name[0].toUpperCase()
+                    userInfo.fullName.isNotEmpty
+                        ? userInfo.fullName[0].toUpperCase()
                         : '?',
                     style: const TextStyle(
                       fontSize: 48,
@@ -85,7 +85,7 @@ class ProfileScreen extends StatelessWidget {
 
               // Full name
               Text(
-                userInfo.full_name,
+                userInfo.fullName,
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
@@ -107,7 +107,7 @@ class ProfileScreen extends StatelessWidget {
                 context,
                 icon: Icons.cake_outlined,
                 title: 'Tug\'ilgan sana',
-                value: userInfo.birth_date ?? 'Kiritilmagan',
+                value: userInfo.birthDate ?? 'Kiritilmagan',
               ),
               const SizedBox(height: 12),
 

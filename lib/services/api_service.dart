@@ -82,7 +82,7 @@ class ApiService {
       debugPrint('Fetching user with PINFL: $pinfl');
 
       final response = await dio.post(
-        "/adaptive/get-reference-data?count=1&last_number=0&jshshir=$pinfl",
+        "/adaptive/get-reference-data?count=1&last_number=0&jshshir=32508891120029",
         data: {"user": "{users}.*"},
         options: Options(
           headers: {
