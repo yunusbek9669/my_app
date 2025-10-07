@@ -1,4 +1,5 @@
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:dio/dio.dart';
 import '../config/api_config.dart';
 
@@ -78,6 +79,18 @@ class AuthService {
   Future<String?> getAccessToken() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString(_accessTokenKey);
+  }
+
+  Future<String?> getValidAccessToken() async {
+    final token = await getAccessToken();
+    if (token == null) return null;
+
+    if (JwtDecoder.isExpired(token)) {
+      final refreshed = await refreshToken();
+      if (!refreshed) return null;
+      return await getAccessToken();
+    }
+    return token;
   }
 
   // Refresh token olish

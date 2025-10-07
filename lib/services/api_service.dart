@@ -11,7 +11,10 @@ class ApiService {
 
   Future<List<Nature>> fetchCertificates() async {
     try {
-      final String? token = await AuthService().getAccessToken();
+      final String? token = await AuthService().getValidAccessToken();
+      if (token == null) {
+        throw Exception("Token yaroqsiz yoki yangilanmadi");
+      }
       if (token == null) {
         throw Exception("Token topilmadi!");
       }
