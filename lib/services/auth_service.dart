@@ -55,7 +55,6 @@ class AuthService {
         'message': e.response?.data['message'] ?? 'Serverga ulanishda xatolik',
       };
     } catch (e) {
-      print(e);
       return {
         'success': false,
         'message': 'Kutilmagan xatolik: $e',

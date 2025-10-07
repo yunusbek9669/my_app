@@ -1,7 +1,7 @@
 class Nature {
   final int id;
   final String title;
-  final String imageUrl;
+  final String? imageUrl;
   final String cost;
   final String date;
   final String description;

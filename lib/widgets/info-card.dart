@@ -9,7 +9,7 @@ class InfoButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final imageBytes = base64FromDataUri(nature.imageUrl);
+    final imageBytes = base64FromDataUri(nature.imageUrl ?? "");
     return Positioned(
       top: 0,
       right: 0,

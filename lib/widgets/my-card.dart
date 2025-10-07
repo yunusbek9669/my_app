@@ -10,7 +10,7 @@ class MyCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final imageBytes = base64FromDataUri(nature.imageUrl);
+    final imageBytes = base64FromDataUri(nature.imageUrl ?? "");
 
     return Card(
       elevation: 3,

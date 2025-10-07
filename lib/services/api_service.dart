@@ -15,13 +15,17 @@ class ApiService {
       if (token == null) {
         throw Exception("Token yaroqsiz yoki yangilanmadi");
       }
-      if (token == null) {
-        throw Exception("Token topilmadi!");
-      }
 
       final response = await dio.post(
-        "/certificate/certificates-for-test",
-        data: ["NV-I"],
+        "/adaptive/get-relation-data?count=10&last_number=0&series=NV-I",
+        data: {
+          "id": "{certificate}.id",
+          "title": "{title}.name_uz",
+          "imageUrl": "{certificate}.rasm",
+          "cost": "{serial}.series",
+          "date": "TO_CHAR(TO_TIMESTAMP({certificate}.berilgan_vaqt), 'DD.MM.YYYY')",
+          "description": "{position}.name_uz",
+        },
         options: Options(
           headers: {
             "Authorization": "Bearer $token",
@@ -50,9 +54,9 @@ class ApiService {
       }
 
       // Normal holat: data mavjud
-      final data = responseData["data"];
+      final data = responseData['items'];
 
-      if (data == null) {
+      if (data == null || data == {}) {
         return [];
       }
 
